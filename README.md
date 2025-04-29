@@ -103,7 +103,7 @@ docker run --name evaluacionDsegovia -p 8080:8080 evaluacion-dsegovia
 ## Consola H2
 
 - **URL**: [http://localhost:8080/h2-console](http://localhost:8080/h2-console)
-- **JDBC URL**: `jdbc:h2:mem:userdb`
+- **JDBC URL**: `jdbc:h2:mem:test`
 - **Usuario**: `dsegovia`
 - **Contraseña**: `dsegovia`
 
