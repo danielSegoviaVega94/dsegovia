@@ -82,7 +82,24 @@ mvn spring-boot:run
 La aplicación estará disponible en: [http://localhost:8080](http://localhost:8080)
 
 ---
+## Despliegue con Docker
 
+El proyecto incluye un Dockerfile optimizado para facilitar el despliegue en contenedores Docker.
+
+### Prerrequisitos
+- Docker instalado en su sistema
+- Acceso a la terminal/línea de comandos
+
+### Pasos para despliegue con Docker
+
+**Construir la imagen Docker:**
+```bash
+docker build -t evaluacion-dsegovia .
+```
+```bash
+docker run --name evaluacionDsegovia -p 8080:8080 evaluacion-dsegovia
+```
+---
 ## Consola H2
 
 - **URL**: [http://localhost:8080/h2-console](http://localhost:8080/h2-console)
