@@ -1,0 +1,345 @@
+{
+  "info": {
+    "_postman_id": "ds-evaluacion-java-2025",
+    "name": "API Gestión de Usuarios - Daniel Segovia",
+    "description": "Colección de pruebas para la evaluación Java. Incluye ejemplos personalizados para demostrar el funcionamiento completo del CRUD de usuarios.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Usuarios",
+      "item": [
+        {
+          "name": "1. Crear Usuario - Daniel Segovia",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Guardar el token para las siguientes peticiones",
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set(\"jwt_token\", jsonData.token);",
+                  "    pm.collectionVariables.set(\"daniel_id\", jsonData.idUsuario);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nombre\": \"Daniel Segovia\",\n    \"correo\": \"daniel.segoviavega@gmail.com\",\n    \"contrasena\": \"Java2025!\",\n    \"telefonos\": [\n        {\n            \"numero\": \"987654321\",\n            \"codigoCiudad\": \"2\",\n            \"codigoPais\": \"56\"\n        },\n        {\n            \"numero\": \"930534711\",\n            \"codigoCiudad\": \"22\",\n            \"codigoPais\": \"56\"\n        }\n    ]\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/usuarios",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "usuarios"
+              ]
+            },
+            "description": "Crea un nuevo usuario en el sistema. EJECUTAR PRIMERO para obtener el token JWT."
+          },
+          "response": []
+        },
+        {
+          "name": "2. Crear Usuario - Usuario 2",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nombre\": \"Maria Vega\",\n    \"correo\": \"maria.vega@gmail.com\",\n    \"contrasena\": \"Familia2025$\",\n    \"telefonos\": [\n        {\n            \"numero\": \"956789012\",\n            \"codigoCiudad\": \"32\",\n            \"codigoPais\": \"56\"\n        }\n    ]\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/usuarios",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "usuarios"
+              ]
+            },
+            "description": "Crea un usuario 2"
+          },
+          "response": []
+        },
+        {
+          "name": "3. Error - Correo Duplicado Daniel",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nombre\": \"Daniel Segundo Segovia\",\n    \"correo\": \"daniel.segoviavega@gmail.com\",\n    \"contrasena\": \"OtroPass123!\",\n    \"telefonos\": [\n        {\n            \"numero\": \"912345678\",\n            \"codigoCiudad\": \"2\",\n            \"codigoPais\": \"56\"\n        }\n    ]\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/usuarios",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "usuarios"
+              ]
+            },
+            "description": "Ejemplo de error cuando se intenta usar un correo que ya existe (el de Daniel). Debe retornar: {\"mensaje\": \"El correo ya está registrado\"}"
+          },
+          "response": []
+        },
+        {
+          "name": "4. Error - Contraseña Inválida",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nombre\": \"Carlos Segovia\",\n    \"correo\": \"carlos.segovia@gmail.com\",\n    \"contrasena\": \"simple\",\n    \"telefonos\": [\n        {\n            \"numero\": \"912345678\",\n            \"codigoCiudad\": \"2\",\n            \"codigoPais\": \"56\"\n        }\n    ]\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/usuarios",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "usuarios"
+              ]
+            },
+            "description": "Error cuando la contraseña no cumple con el patrón requerido"
+          },
+          "response": []
+        },
+        {
+          "name": "5. Error - Correo Inválido",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nombre\": \"Test User\",\n    \"correo\": \"email_invalido\",\n    \"contrasena\": \"ValidPass123!\",\n    \"telefonos\": [\n        {\n            \"numero\": \"912345678\",\n            \"codigoCiudad\": \"2\",\n            \"codigoPais\": \"56\"\n        }\n    ]\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/usuarios",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "usuarios"
+              ]
+            },
+            "description": "Error cuando el formato del correo es inválido"
+          },
+          "response": []
+        },
+        {
+          "name": "6. Obtener Usuario por ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8080/api/usuarios/{{daniel_id}}",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "usuarios",
+                "{{daniel_id}}"
+              ]
+            },
+            "description": "Obtiene el usuario Daniel Segovia por su ID"
+          },
+          "response": []
+        },
+        {
+          "name": "7. Listar Todos los Usuarios",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8080/api/usuarios",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "usuarios"
+              ]
+            },
+            "description": "Lista todos los usuarios registrados en el sistema"
+          },
+          "response": []
+        },
+        {
+          "name": "8. Actualizar Usuario Completo",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nombre\": \"Daniel Segovia Vega\",\n    \"correo\": \"daniel.segovia.dev@gmail.com\",\n    \"contrasena\": \"NuevaPassword2025!\",\n    \"telefonos\": [\n        {\n            \"numero\": \"930534711\",\n            \"codigoCiudad\": \"2\",\n            \"codigoPais\": \"56\"\n        },\n        {\n            \"numero\": \"962738495\",\n            \"codigoCiudad\": \"41\",\n            \"codigoPais\": \"56\"\n        }\n    ]\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/usuarios/{{daniel_id}}",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "usuarios",
+                "{{daniel_id}}"
+              ]
+            },
+            "description": "Actualiza todos los datos del usuario Daniel Segovia"
+          },
+          "response": []
+        },
+        {
+          "name": "9. Actualizar Parcialmente",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nombre\": \"Daniel Alejandro Segovia\",\n    \"telefonos\": [\n        {\n            \"numero\": \"930534711\",\n            \"codigoCiudad\": \"9\",\n            \"codigoPais\": \"56\"\n        }\n    ]\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/usuarios/{{daniel_id}}",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "usuarios",
+                "{{daniel_id}}"
+              ]
+            },
+            "description": "Actualiza solo algunos campos del usuario"
+          },
+          "response": []
+        },
+        {
+          "name": "10. Eliminar Usuario",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8080/api/usuarios/2",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "usuarios",
+                "2"
+              ]
+            },
+            "description": "Elimina el usuario con ID 2 (María Vega) del sistema"
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "jwt_token",
+      "value": ""
+    },
+    {
+      "key": "daniel_id",
+      "value": ""
+    }
+  ]
+}
