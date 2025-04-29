@@ -4,7 +4,6 @@ import ds.evaluacion.dsegovia.dto.TelefonoDTO;
 import ds.evaluacion.dsegovia.dto.UsuarioDTO;
 import ds.evaluacion.dsegovia.dto.UsuarioResponseDTO;
 import ds.evaluacion.dsegovia.entity.Usuario;
-import ds.evaluacion.dsegovia.entity.Telefono;
 import ds.evaluacion.dsegovia.exception.EmailYaExisteException;
 import ds.evaluacion.dsegovia.exception.UsuarioNoEncontradoException;
 import ds.evaluacion.dsegovia.mapper.UsuarioMapper;
@@ -87,6 +86,8 @@ class UsuarioServiceTest {
                 .ultimoLogin(usuario.getUltimoLogin())
                 .token("token")
                 .build();
+
+
     }
 
     @Test
@@ -102,7 +103,7 @@ class UsuarioServiceTest {
 
         assertNotNull(resultado);
         assertEquals(usuarioResponseDTO.getIdUsuario(), resultado.getIdUsuario());
-        verify(usuarioRepository).save(any(Usuario.class));
+        verify(usuarioRepository, times(2)).save(any(Usuario.class));
     }
 
     @Test

@@ -1,12 +1,14 @@
 package ds.evaluacion.dsegovia.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import ds.evaluacion.dsegovia.config.ValidacionConfig;
 import ds.evaluacion.dsegovia.dto.TelefonoDTO;
 import ds.evaluacion.dsegovia.dto.UsuarioDTO;
 import ds.evaluacion.dsegovia.dto.UsuarioResponseDTO;
 import ds.evaluacion.dsegovia.exception.GlobalExceptionHandler;
 import ds.evaluacion.dsegovia.exception.UsuarioNoEncontradoException;
 import ds.evaluacion.dsegovia.service.UsuarioService;
+import ds.evaluacion.dsegovia.validation.ValidPasswordValidator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,19 +30,17 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+
 @WebMvcTest(UsuarioController.class)
-@Import({GlobalExceptionHandler.class})
+@Import({GlobalExceptionHandler.class,ValidacionConfig.class})
 class UsuarioControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
-
     @Autowired
     private ObjectMapper objectMapper;
-
     @MockitoBean
     private UsuarioService usuarioService;
-
     private UsuarioDTO usuarioDTO;
     private UsuarioResponseDTO usuarioResponseDTO;
 
@@ -68,6 +68,7 @@ class UsuarioControllerTest {
                 .token("token")
                 .build();
     }
+
 
     @Test
     @WithMockUser
@@ -167,12 +168,12 @@ class UsuarioControllerTest {
     @WithMockUser
     void eliminarUsuario_Exitoso() throws Exception {
         when(usuarioService.eliminarUsuario(1L))
-                .thenReturn("El recurso solicitado fue procesado y eliminado exitosamente");
+                .thenReturn("El Usuario solicitado fue eliminado exitosamente");
 
         mockMvc.perform(delete("/api/usuarios/1")
                         .with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.mensaje")
-                        .value("El recurso solicitado fue procesado y eliminado exitosamente"));
+                        .value("El Usuario solicitado fue eliminado exitosamente"));
     }
 }
