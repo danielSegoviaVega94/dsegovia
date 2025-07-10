@@ -8,7 +8,6 @@ import ds.evaluacion.dsegovia.dto.UsuarioResponseDTO;
 import ds.evaluacion.dsegovia.exception.GlobalExceptionHandler;
 import ds.evaluacion.dsegovia.exception.UsuarioNoEncontradoException;
 import ds.evaluacion.dsegovia.service.UsuarioService;
-import ds.evaluacion.dsegovia.validation.ValidPasswordValidator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +21,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -30,22 +30,30 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-
 @WebMvcTest(UsuarioController.class)
-@Import({GlobalExceptionHandler.class,ValidacionConfig.class})
+@Import({GlobalExceptionHandler.class, ValidacionConfig.class})
 class UsuarioControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
+
     @Autowired
     private ObjectMapper objectMapper;
+
     @MockitoBean
     private UsuarioService usuarioService;
+
     private UsuarioDTO usuarioDTO;
     private UsuarioResponseDTO usuarioResponseDTO;
+    private UUID usuarioId;
+    private String usuarioIdString;
 
     @BeforeEach
     void setUp() {
+        // Generamos un UUID consistente para las pruebas
+        usuarioId = UUID.randomUUID();
+        usuarioIdString = usuarioId.toString();
+
         TelefonoDTO telefonoDTO = TelefonoDTO.builder()
                 .numero("912345678")
                 .codigoCiudad("1")
@@ -60,7 +68,7 @@ class UsuarioControllerTest {
                 .build();
 
         usuarioResponseDTO = UsuarioResponseDTO.builder()
-                .idUsuario(1L)
+                .idUsuario(usuarioId)
                 .activo(true)
                 .creado(LocalDateTime.now())
                 .modificado(LocalDateTime.now())
@@ -68,7 +76,6 @@ class UsuarioControllerTest {
                 .token("token")
                 .build();
     }
-
 
     @Test
     @WithMockUser
@@ -80,7 +87,7 @@ class UsuarioControllerTest {
                         .content(objectMapper.writeValueAsString(usuarioDTO))
                         .with(csrf()))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.idUsuario").value(1L))
+                .andExpect(jsonPath("$.idUsuario").value(usuarioIdString))
                 .andExpect(jsonPath("$.activo").value(true));
     }
 
@@ -99,25 +106,49 @@ class UsuarioControllerTest {
 
     @Test
     @WithMockUser
-    void obtenerUsuarioPorId_Exitoso() throws Exception {
-        when(usuarioService.obtenerUsuarioPorId(1L)).thenReturn(usuarioResponseDTO);
+    void crearUsuario_ContrasenaDebil() throws Exception {
+        usuarioDTO.setContrasena("123"); // Contraseña débil
 
-        mockMvc.perform(get("/api/usuarios/1")
+        mockMvc.perform(post("/api/usuarios")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(usuarioDTO))
+                        .with(csrf()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.mensaje").exists());
+    }
+
+    @Test
+    @WithMockUser
+    void obtenerUsuarioPorId_Exitoso() throws Exception {
+        when(usuarioService.obtenerUsuarioPorId(usuarioId)).thenReturn(usuarioResponseDTO);
+
+        mockMvc.perform(get("/api/usuarios/{id}", usuarioIdString)
                         .with(csrf()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.idUsuario").value(1L));
+                .andExpect(jsonPath("$.idUsuario").value(usuarioIdString));
     }
 
     @Test
     @WithMockUser
     void obtenerUsuarioPorId_NoEncontrado() throws Exception {
-        when(usuarioService.obtenerUsuarioPorId(1L))
+        when(usuarioService.obtenerUsuarioPorId(usuarioId))
                 .thenThrow(new UsuarioNoEncontradoException("Usuario no encontrado"));
 
-        mockMvc.perform(get("/api/usuarios/1")
+        mockMvc.perform(get("/api/usuarios/{id}", usuarioIdString)
                         .with(csrf()))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.mensaje").value("Usuario no encontrado"));
+    }
+
+    @Test
+    @WithMockUser
+    void obtenerUsuarioPorId_FormatoInvalido() throws Exception {
+        String idInvalido = "no-es-un-uuid";
+
+        mockMvc.perform(get("/api/usuarios/{id}", idInvalido)
+                        .with(csrf()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.mensaje").exists());
     }
 
     @Test
@@ -129,21 +160,21 @@ class UsuarioControllerTest {
         mockMvc.perform(get("/api/usuarios")
                         .with(csrf()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].idUsuario").value(1L));
+                .andExpect(jsonPath("$[0].idUsuario").value(usuarioIdString));
     }
 
     @Test
     @WithMockUser
     void actualizarUsuario_Exitoso() throws Exception {
-        when(usuarioService.actualizarUsuario(eq(1L), any(UsuarioDTO.class)))
+        when(usuarioService.actualizarUsuario(eq(usuarioId), any(UsuarioDTO.class)))
                 .thenReturn(usuarioResponseDTO);
 
-        mockMvc.perform(put("/api/usuarios/1")
+        mockMvc.perform(put("/api/usuarios/{id}", usuarioIdString)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(usuarioDTO))
                         .with(csrf()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.idUsuario").value(1L));
+                .andExpect(jsonPath("$.idUsuario").value(usuarioIdString));
     }
 
     @Test
@@ -153,27 +184,39 @@ class UsuarioControllerTest {
                 .nombre("Nuevo Nombre")
                 .build();
 
-        when(usuarioService.actualizarParcialUsuario(eq(1L), any(UsuarioDTO.class)))
+        when(usuarioService.actualizarParcialUsuario(eq(usuarioId), any(UsuarioDTO.class)))
                 .thenReturn(usuarioResponseDTO);
 
-        mockMvc.perform(patch("/api/usuarios/1")
+        mockMvc.perform(patch("/api/usuarios/{id}", usuarioIdString)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(usuarioParcialDTO))
                         .with(csrf()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.idUsuario").value(1L));
+                .andExpect(jsonPath("$.idUsuario").value(usuarioIdString));
     }
 
     @Test
     @WithMockUser
     void eliminarUsuario_Exitoso() throws Exception {
-        when(usuarioService.eliminarUsuario(1L))
-                .thenReturn("El Usuario solicitado fue eliminado exitosamente");
+        String mensajeEliminacion = "El usuario fue eliminado exitosamente";
+        when(usuarioService.eliminarUsuario(usuarioId))
+                .thenReturn(mensajeEliminacion);
 
-        mockMvc.perform(delete("/api/usuarios/1")
+        mockMvc.perform(delete("/api/usuarios/{id}", usuarioIdString)
                         .with(csrf()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.mensaje")
-                        .value("El Usuario solicitado fue eliminado exitosamente"));
+                .andExpect(jsonPath("$.mensaje").value(mensajeEliminacion));
+    }
+
+    @Test
+    @WithMockUser
+    void eliminarUsuario_NoEncontrado() throws Exception {
+        when(usuarioService.eliminarUsuario(usuarioId))
+                .thenThrow(new UsuarioNoEncontradoException("Usuario no encontrado"));
+
+        mockMvc.perform(delete("/api/usuarios/{id}", usuarioIdString)
+                        .with(csrf()))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.mensaje").value("Usuario no encontrado"));
     }
 }

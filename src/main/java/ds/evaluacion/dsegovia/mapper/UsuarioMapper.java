@@ -9,50 +9,41 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Mapper(componentModel = "spring")
 public interface UsuarioMapper {
-    @Mapping(target = "idUsuario", ignore = true)
-    @Mapping(target = "creado", ignore = true)
-    @Mapping(target = "modificado", ignore = true)
+
+    @Mapping(target = "idUsuario",   ignore = true)
+    @Mapping(target = "creado",      ignore = true)
+    @Mapping(target = "modificado",  ignore = true)
     @Mapping(target = "ultimoLogin", ignore = true)
-    @Mapping(target = "token", ignore = true)
-    @Mapping(target = "activo", ignore = true)
+    @Mapping(target = "token",       ignore = true)
+    @Mapping(target = "activo",      ignore = true)
+    @Mapping(target = "telefonos",   ignore = true)
     Usuario toEntity(UsuarioDTO dto);
-    @Mapping(source = "telefonos", target = "telefonos")
+
+
     UsuarioResponseDTO toResponseDTO(Usuario usuario);
 
+
+
+    @Mapping(target = "usuario", ignore = true)
     Telefono toTelefonoEntity(TelefonoDTO dto);
+
 
     TelefonoDTO toTelefonoDTO(Telefono telefono);
 
-    List<Telefono> toTelefonoEntityList(List<TelefonoDTO> dtos);
 
-    List<TelefonoDTO> toTelefonoDTOList(List<Telefono> telefonos);
+    List<Telefono>      toTelefonoEntityList(List<TelefonoDTO> dtos);
+    List<TelefonoDTO>   toTelefonoDTOList(List<Telefono> telefonos);
 
-    @Mapping(target = "idUsuario", ignore = true)
-    @Mapping(target = "creado", ignore = true)
-    @Mapping(target = "modificado", ignore = true)
+    @Mapping(target = "idUsuario",   ignore = true)
+    @Mapping(target = "creado",      ignore = true)
+    @Mapping(target = "modificado",  ignore = true)
     @Mapping(target = "ultimoLogin", ignore = true)
-    @Mapping(target = "token", ignore = true)
-    @Mapping(target = "activo", ignore = true)
+    @Mapping(target = "token",       ignore = true)
+    @Mapping(target = "activo",      ignore = true)
+    @Mapping(target = "telefonos",   ignore = true)
     void updateUserFromDTO(UsuarioDTO dto, @MappingTarget Usuario usuario);
-
-    default List<Telefono> toTelefonoEntityListWithUsuario(List<TelefonoDTO> dtos, Usuario usuario) {
-        if (dtos == null) {
-            return new ArrayList<>();
-        }
-
-        List<Telefono> telefonos = new ArrayList<>();
-
-        for (TelefonoDTO dto : dtos) {
-            Telefono telefono = toTelefonoEntity(dto);
-            telefono.setUsuario(usuario);
-            telefonos.add(telefono);
-        }
-
-        return telefonos;
-    }
 }

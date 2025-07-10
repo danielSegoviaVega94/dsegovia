@@ -39,35 +39,29 @@ public class UsuarioServiceImpl implements UsuarioService {
 
         Usuario usuario = usuarioMapper.toEntity(usuarioDTO);
         usuario.setContrasena(passwordEncoder.encode(usuarioDTO.getContrasena()));
-
-        String token = jwtTokenProvider.generarToken(usuario.getCorreo());
-        usuario.setToken(token);
+        usuario.setToken(jwtTokenProvider.generarToken(usuario.getCorreo()));
         usuario.setUltimoLogin(LocalDateTime.now());
         usuario.setActivo(true);
 
-        usuario.setTelefonos(new ArrayList<>());
-        Usuario usuarioGuardado = usuarioRepository.save(usuario);
-
         if (usuarioDTO.getTelefonos() != null && !usuarioDTO.getTelefonos().isEmpty()) {
-            List<Telefono> telefonos = usuarioMapper.toTelefonoEntityListWithUsuario(
-                    usuarioDTO.getTelefonos(),
-                    usuarioGuardado
-            );
-            usuarioGuardado.setTelefonos(telefonos);
-            usuarioGuardado = usuarioRepository.save(usuarioGuardado);
+            usuarioDTO.getTelefonos().forEach(t ->
+                    usuario.addTelefono(usuarioMapper.toTelefonoEntity(t)));
         }
 
-        return usuarioMapper.toResponseDTO(usuarioGuardado);
+        Usuario guardado = usuarioRepository.save(usuario);
+        return usuarioMapper.toResponseDTO(guardado);
     }
 
     @Override
-    public UsuarioResponseDTO obtenerUsuarioPorId(Long  id) {
+    @Transactional(readOnly = true)
+    public UsuarioResponseDTO obtenerUsuarioPorId(UUID id) {
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new UsuarioNoEncontradoException("Usuario no encontrado"));
         return usuarioMapper.toResponseDTO(usuario);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<UsuarioResponseDTO> obtenerTodosLosUsuarios() {
         return usuarioRepository.findAll().stream()
                 .map(usuarioMapper::toResponseDTO)
@@ -76,24 +70,16 @@ public class UsuarioServiceImpl implements UsuarioService {
 
     @Override
     @Transactional
-    public UsuarioResponseDTO actualizarUsuario(Long  id, UsuarioDTO usuarioDTO) {
+    public UsuarioResponseDTO actualizarUsuario(UUID id, UsuarioDTO usuarioDTO) {
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new UsuarioNoEncontradoException("Usuario no encontrado"));
 
-        if (!usuario.getCorreo().equals(usuarioDTO.getCorreo()) &&
-                usuarioRepository.existsByCorreo(usuarioDTO.getCorreo())) {
-            throw new EmailYaExisteException("El correo ya está registrado");
-        }
+        validarCambioDeCorreo(usuario, usuarioDTO);
 
         usuarioMapper.updateUserFromDTO(usuarioDTO, usuario);
         usuario.setContrasena(passwordEncoder.encode(usuarioDTO.getContrasena()));
 
-        usuario.getTelefonos().clear();
-        List<Telefono> telefonos = usuarioMapper.toTelefonoEntityListWithUsuario(
-                usuarioDTO.getTelefonos(),
-                usuario
-        );
-        usuario.getTelefonos().addAll(telefonos);
+        actualizarTelefonos(usuario, usuarioDTO);
 
         Usuario usuarioActualizado = usuarioRepository.save(usuario);
         return usuarioMapper.toResponseDTO(usuarioActualizado);
@@ -101,22 +87,17 @@ public class UsuarioServiceImpl implements UsuarioService {
 
     @Override
     @Transactional
-    public UsuarioResponseDTO actualizarParcialUsuario(Long  id, UsuarioDTO usuarioDTO) {
+    public UsuarioResponseDTO actualizarParcialUsuario(UUID id, UsuarioDTO usuarioDTO) {
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new UsuarioNoEncontradoException("Usuario no encontrado"));
 
-        if (usuarioDTO.getCorreo() != null &&
-                !usuario.getCorreo().equals(usuarioDTO.getCorreo()) &&
-                usuarioRepository.existsByCorreo(usuarioDTO.getCorreo())) {
-            throw new EmailYaExisteException("El correo ya está registrado");
+        if (usuarioDTO.getCorreo() != null) {
+            validarCambioDeCorreo(usuario, usuarioDTO);
+            usuario.setCorreo(usuarioDTO.getCorreo());
         }
 
         if (usuarioDTO.getNombre() != null) {
             usuario.setNombre(usuarioDTO.getNombre());
-        }
-
-        if (usuarioDTO.getCorreo() != null) {
-            usuario.setCorreo(usuarioDTO.getCorreo());
         }
 
         if (usuarioDTO.getContrasena() != null) {
@@ -124,17 +105,7 @@ public class UsuarioServiceImpl implements UsuarioService {
         }
 
         if (usuarioDTO.getTelefonos() != null) {
-            usuario.getTelefonos().clear();
-            usuario.getTelefonos().addAll(usuarioMapper.toTelefonoEntityList(usuarioDTO.getTelefonos()));
-        }
-
-        if (usuarioDTO.getTelefonos() != null) {
-            usuario.getTelefonos().clear();
-            List<Telefono> telefonos = usuarioMapper.toTelefonoEntityListWithUsuario(
-                    usuarioDTO.getTelefonos(),
-                    usuario
-            );
-            usuario.getTelefonos().addAll(telefonos);
+            actualizarTelefonos(usuario, usuarioDTO);
         }
 
         Usuario usuarioActualizado = usuarioRepository.save(usuario);
@@ -142,16 +113,29 @@ public class UsuarioServiceImpl implements UsuarioService {
     }
 
     @Override
-    @Transactional
-    public String eliminarUsuario(Long id) {
-        boolean existia = usuarioRepository.existsById(id);
+    public String eliminarUsuario(UUID id) {
+        if (!usuarioRepository.existsById(id)) {
+            throw new UsuarioNoEncontradoException("Usuario no encontrado");
+        }
 
         usuarioRepository.deleteById(id);
+        return "El usuario fue eliminado exitosamente";
+    }
 
-        if (existia) {
-            return "El Usuario solicitado fue eliminado exitosamente";
-        } else {
-            return "La operación de eliminación se completó sin cambios en el sistema";
+
+    private void validarCambioDeCorreo(Usuario usuarioExistente, UsuarioDTO usuarioDTO) {
+        if (!usuarioExistente.getCorreo().equals(usuarioDTO.getCorreo()) &&
+                usuarioRepository.existsByCorreo(usuarioDTO.getCorreo())) {
+            throw new EmailYaExisteException("El correo ya está registrado");
         }
     }
+
+    private void actualizarTelefonos(Usuario usuario, UsuarioDTO dto) {
+        usuario.clearTelefonos();
+        if (dto.getTelefonos() != null && !dto.getTelefonos().isEmpty()) {
+            dto.getTelefonos().forEach(t ->
+                    usuario.addTelefono(usuarioMapper.toTelefonoEntity(t)));
+        }
+    }
+
 }

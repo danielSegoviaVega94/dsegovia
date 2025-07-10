@@ -21,8 +21,9 @@ import java.util.UUID;
 public class Usuario {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long idUsuario;
+    @org.hibernate.annotations.UuidGenerator
+    @Column(name = "id_usuario", updatable = false, nullable = false)
+    private UUID idUsuario;
 
     @Column(nullable = false)
     private String nombre;
@@ -50,7 +51,11 @@ public class Usuario {
     @Column(nullable = false)
     private Boolean activo = true;
 
-    @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "usuario",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true,
+            fetch = FetchType.LAZY)
+    @Builder.Default
     private List<Telefono> telefonos = new ArrayList<>();
 
     @PrePersist
@@ -61,7 +66,16 @@ public class Usuario {
     }
 
     public void addTelefono(Telefono telefono) {
-        telefonos.add(telefono);
         telefono.setUsuario(this);
+        this.telefonos.add(telefono);
+    }
+
+    public void clearTelefonos() {
+        if (telefonos == null) {
+            telefonos = new ArrayList<>();
+            return;
+        }
+        telefonos.forEach(t -> t.setUsuario(null));
+        telefonos.clear();
     }
 }

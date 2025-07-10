@@ -7,9 +7,9 @@ import java.util.UUID;
 
 public interface UsuarioService {
     UsuarioResponseDTO crearUsuario(UsuarioDTO usuarioDTO);
-    UsuarioResponseDTO obtenerUsuarioPorId(Long  id);
+    UsuarioResponseDTO obtenerUsuarioPorId(UUID  id);
     List<UsuarioResponseDTO> obtenerTodosLosUsuarios();
-    UsuarioResponseDTO actualizarUsuario(Long  id, UsuarioDTO usuarioDTO);
-    UsuarioResponseDTO actualizarParcialUsuario(Long  id, UsuarioDTO usuarioDTO);
-    String eliminarUsuario(Long id);
+    UsuarioResponseDTO actualizarUsuario(UUID  id, UsuarioDTO usuarioDTO);
+    UsuarioResponseDTO actualizarParcialUsuario(UUID  id, UsuarioDTO usuarioDTO);
+    String eliminarUsuario(UUID id);
 }

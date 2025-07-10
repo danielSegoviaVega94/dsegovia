@@ -3,6 +3,7 @@ package ds.evaluacion.dsegovia.service;
 import ds.evaluacion.dsegovia.dto.TelefonoDTO;
 import ds.evaluacion.dsegovia.dto.UsuarioDTO;
 import ds.evaluacion.dsegovia.dto.UsuarioResponseDTO;
+import ds.evaluacion.dsegovia.entity.Telefono;
 import ds.evaluacion.dsegovia.entity.Usuario;
 import ds.evaluacion.dsegovia.exception.EmailYaExisteException;
 import ds.evaluacion.dsegovia.exception.UsuarioNoEncontradoException;
@@ -23,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -51,9 +53,15 @@ class UsuarioServiceTest {
     private Usuario usuario;
     private UsuarioResponseDTO usuarioResponseDTO;
     private TelefonoDTO telefonoDTO;
+    private Telefono telefono;
+    private UUID usuarioId;
+    private UUID telefonoId;
 
     @BeforeEach
     void setUp() {
+        usuarioId = UUID.randomUUID();
+        telefonoId = UUID.randomUUID();
+
         telefonoDTO = TelefonoDTO.builder()
                 .numero("912345678")
                 .codigoCiudad("1")
@@ -68,9 +76,10 @@ class UsuarioServiceTest {
                 .build();
 
         usuario = Usuario.builder()
-                .idUsuario(1L)
+                .idUsuario(usuarioId)
                 .nombre("Juan Pérez")
                 .correo("juan@ejemplo.cl")
+                .contrasena("contrasenaEncriptada")
                 .activo(true)
                 .creado(LocalDateTime.now())
                 .modificado(LocalDateTime.now())
@@ -78,22 +87,28 @@ class UsuarioServiceTest {
                 .telefonos(new ArrayList<>())
                 .build();
 
+        telefono = Telefono.builder()
+                .idTelefono(telefonoId)
+                .numero("912345678")
+                .codigoCiudad("1")
+                .codigoPais("56")
+                .build();
+
         usuarioResponseDTO = UsuarioResponseDTO.builder()
-                .idUsuario(usuario.getIdUsuario())
+                .idUsuario(usuarioId)
                 .activo(true)
                 .creado(usuario.getCreado())
                 .modificado(usuario.getModificado())
                 .ultimoLogin(usuario.getUltimoLogin())
                 .token("token")
                 .build();
-
-
     }
 
     @Test
     void crearUsuario_Exitoso() {
         when(usuarioRepository.existsByCorreo(anyString())).thenReturn(false);
         when(usuarioMapper.toEntity(any(UsuarioDTO.class))).thenReturn(usuario);
+        when(usuarioMapper.toTelefonoEntity(any(TelefonoDTO.class))).thenReturn(telefono);
         when(passwordEncoder.encode(anyString())).thenReturn("contrasenaEncriptada");
         when(jwtTokenProvider.generarToken(anyString())).thenReturn("token");
         when(usuarioRepository.save(any(Usuario.class))).thenReturn(usuario);
@@ -102,8 +117,8 @@ class UsuarioServiceTest {
         UsuarioResponseDTO resultado = usuarioService.crearUsuario(usuarioDTO);
 
         assertNotNull(resultado);
-        assertEquals(usuarioResponseDTO.getIdUsuario(), resultado.getIdUsuario());
-        verify(usuarioRepository, times(2)).save(any(Usuario.class));
+        assertEquals(usuarioId, resultado.getIdUsuario());
+        verify(usuarioRepository).save(any(Usuario.class));
     }
 
     @Test
@@ -116,21 +131,21 @@ class UsuarioServiceTest {
 
     @Test
     void obtenerUsuarioPorId_Exitoso() {
-        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
+        when(usuarioRepository.findById(usuarioId)).thenReturn(Optional.of(usuario));
         when(usuarioMapper.toResponseDTO(any(Usuario.class))).thenReturn(usuarioResponseDTO);
 
-        UsuarioResponseDTO resultado = usuarioService.obtenerUsuarioPorId(1L);
+        UsuarioResponseDTO resultado = usuarioService.obtenerUsuarioPorId(usuarioId);
 
         assertNotNull(resultado);
-        assertEquals(usuarioResponseDTO.getIdUsuario(), resultado.getIdUsuario());
-        verify(usuarioRepository).findById(1L);
+        assertEquals(usuarioId, resultado.getIdUsuario());
+        verify(usuarioRepository).findById(usuarioId);
     }
 
     @Test
     void obtenerUsuarioPorId_NoEncontrado() {
-        when(usuarioRepository.findById(1L)).thenReturn(Optional.empty());
+        when(usuarioRepository.findById(usuarioId)).thenReturn(Optional.empty());
 
-        assertThrows(UsuarioNoEncontradoException.class, () -> usuarioService.obtenerUsuarioPorId(1L));
+        assertThrows(UsuarioNoEncontradoException.class, () -> usuarioService.obtenerUsuarioPorId(usuarioId));
     }
 
     @Test
@@ -144,19 +159,19 @@ class UsuarioServiceTest {
         assertNotNull(resultado);
         assertFalse(resultado.isEmpty());
         assertEquals(1, resultado.size());
+        assertEquals(usuarioId, resultado.get(0).getIdUsuario());
         verify(usuarioRepository).findAll();
     }
 
     @Test
     void actualizarUsuario_Exitoso() {
-        usuarioDTO.setCorreo("juan@ejemplo.cl");
-
-        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
+        when(usuarioRepository.findById(usuarioId)).thenReturn(Optional.of(usuario));
+        when(usuarioMapper.toTelefonoEntity(any(TelefonoDTO.class))).thenReturn(telefono);
         when(passwordEncoder.encode(anyString())).thenReturn("nuevaContrasenaEncriptada");
         when(usuarioRepository.save(any(Usuario.class))).thenReturn(usuario);
         when(usuarioMapper.toResponseDTO(any(Usuario.class))).thenReturn(usuarioResponseDTO);
 
-        UsuarioResponseDTO resultado = usuarioService.actualizarUsuario(1L, usuarioDTO);
+        UsuarioResponseDTO resultado = usuarioService.actualizarUsuario(usuarioId, usuarioDTO);
 
         assertNotNull(resultado);
         verify(usuarioRepository).save(any(Usuario.class));
@@ -165,30 +180,30 @@ class UsuarioServiceTest {
 
     @Test
     void actualizarUsuario_UsuarioNoEncontrado() {
-        when(usuarioRepository.findById(1L)).thenReturn(Optional.empty());
+        when(usuarioRepository.findById(usuarioId)).thenReturn(Optional.empty());
 
-        assertThrows(UsuarioNoEncontradoException.class, () -> usuarioService.actualizarUsuario(1L, usuarioDTO));
+        assertThrows(UsuarioNoEncontradoException.class, () -> usuarioService.actualizarUsuario(usuarioId, usuarioDTO));
         verify(usuarioRepository, never()).save(any(Usuario.class));
     }
 
     @Test
     void actualizarUsuario_EmailYaExiste() {
-        // Configuramos un escenario donde el usuario intenta cambiar su correo a uno que ya existe
         Usuario usuarioExistente = Usuario.builder()
-                .idUsuario(1L)
+                .idUsuario(usuarioId)
                 .correo("otro@ejemplo.cl")
+                .telefonos(new ArrayList<>())
                 .build();
 
-        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuarioExistente));
+        when(usuarioRepository.findById(usuarioId)).thenReturn(Optional.of(usuarioExistente));
         when(usuarioRepository.existsByCorreo(usuarioDTO.getCorreo())).thenReturn(true);
 
-        assertThrows(EmailYaExisteException.class, () -> usuarioService.actualizarUsuario(1L, usuarioDTO));
+        assertThrows(EmailYaExisteException.class, () -> usuarioService.actualizarUsuario(usuarioId, usuarioDTO));
         verify(usuarioRepository, never()).save(any(Usuario.class));
     }
 
     @Test
     void actualizarParcialUsuario_Exitoso() {
-        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
+        when(usuarioRepository.findById(usuarioId)).thenReturn(Optional.of(usuario));
         when(usuarioRepository.save(any(Usuario.class))).thenReturn(usuario);
         when(usuarioMapper.toResponseDTO(any(Usuario.class))).thenReturn(usuarioResponseDTO);
 
@@ -196,31 +211,29 @@ class UsuarioServiceTest {
                 .nombre("Nuevo Nombre")
                 .build();
 
-        UsuarioResponseDTO resultado = usuarioService.actualizarParcialUsuario(1L, usuarioParcialDTO);
+        UsuarioResponseDTO resultado = usuarioService.actualizarParcialUsuario(usuarioId, usuarioParcialDTO);
 
         assertNotNull(resultado);
+        assertEquals(usuarioId, resultado.getIdUsuario());
         verify(usuarioRepository).save(any(Usuario.class));
     }
 
     @Test
     void eliminarUsuario_Exitoso() {
-        when(usuarioRepository.existsById(1L)).thenReturn(true);
-        doNothing().when(usuarioRepository).deleteById(1L);
+        when(usuarioRepository.existsById(usuarioId)).thenReturn(true);
+        doNothing().when(usuarioRepository).deleteById(usuarioId);
 
-        String resultado = usuarioService.eliminarUsuario(1L);
+        String resultado = usuarioService.eliminarUsuario(usuarioId);
 
-        assertEquals("El Usuario solicitado fue eliminado exitosamente", resultado);
-        verify(usuarioRepository).deleteById(1L);
+        assertEquals("El usuario fue eliminado exitosamente", resultado);
+        verify(usuarioRepository).deleteById(usuarioId);
     }
 
     @Test
-    void eliminarUsuario_NoExiste() {
-        when(usuarioRepository.existsById(1L)).thenReturn(false);
-        doNothing().when(usuarioRepository).deleteById(1L);
+    void eliminarUsuario_NoEncontrado() {
+        when(usuarioRepository.existsById(usuarioId)).thenReturn(false);
 
-        String resultado = usuarioService.eliminarUsuario(1L);
-
-        assertEquals("La operación de eliminación se completó sin cambios en el sistema", resultado);
-        verify(usuarioRepository).deleteById(1L);
+        assertThrows(UsuarioNoEncontradoException.class, () -> usuarioService.eliminarUsuario(usuarioId));
+        verify(usuarioRepository, never()).deleteById(any(UUID.class));
     }
 }

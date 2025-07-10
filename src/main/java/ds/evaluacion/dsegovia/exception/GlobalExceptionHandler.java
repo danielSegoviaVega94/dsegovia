@@ -8,10 +8,12 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -43,6 +45,27 @@ public class GlobalExceptionHandler {
                 .badRequest()
                 .headers(createUtf8Headers())
                 .body(errors);
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<Map<String, String>> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
+        String mensaje;
+
+        if (ex.getRequiredType() != null && ex.getRequiredType().equals(UUID.class)) {
+            mensaje = String.format("ID inválido: '%s' no es un UUID válido", ex.getValue());
+        } else {
+            mensaje = String.format("Valor inválido para el parámetro '%s': %s", ex.getName(), ex.getValue());
+        }
+
+        Map<String, String> response = new HashMap<>();
+        response.put("mensaje", mensaje);
+        response.put("campo", ex.getName());
+        response.put("valorRecibido", String.valueOf(ex.getValue()));
+
+        return ResponseEntity
+                .badRequest()
+                .headers(createUtf8Headers())
+                .body(response);
     }
 
     @ExceptionHandler(UsuarioNoEncontradoException.class)

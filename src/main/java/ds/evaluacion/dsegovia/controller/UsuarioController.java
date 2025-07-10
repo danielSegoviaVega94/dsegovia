@@ -37,7 +37,7 @@ public class UsuarioController {
     @Operation(summary = "Obtener usuario por ID", description = "Obtiene un usuario específico por su ID")
     @ApiResponse(responseCode = "200", description = "Usuario encontrado")
     @ApiResponse(responseCode = "404", description = "Usuario no encontrado")
-    public ResponseEntity<UsuarioResponseDTO> obtenerUsuarioPorId(@PathVariable Long  id) {
+    public ResponseEntity<UsuarioResponseDTO> obtenerUsuarioPorId(@PathVariable UUID  id) {
         UsuarioResponseDTO response = usuarioService.obtenerUsuarioPorId(id);
         return ResponseEntity.ok(response);
     }
@@ -56,7 +56,7 @@ public class UsuarioController {
     @ApiResponse(responseCode = "404", description = "Usuario no encontrado")
     @ApiResponse(responseCode = "400", description = "Datos inválidos o correo ya registrado")
     public ResponseEntity<UsuarioResponseDTO> actualizarUsuario(
-            @PathVariable Long  id,
+            @PathVariable UUID  id,
             @Valid @RequestBody UsuarioDTO usuarioDTO) {
         UsuarioResponseDTO response = usuarioService.actualizarUsuario(id, usuarioDTO);
         return ResponseEntity.ok(response);
@@ -68,7 +68,7 @@ public class UsuarioController {
     @ApiResponse(responseCode = "404", description = "Usuario no encontrado")
     @ApiResponse(responseCode = "400", description = "Datos inválidos o correo ya registrado")
     public ResponseEntity<UsuarioResponseDTO> actualizarParcialUsuario(
-            @PathVariable Long  id,
+            @PathVariable UUID  id,
             @RequestBody UsuarioDTO usuarioDTO) {
         UsuarioResponseDTO response = usuarioService.actualizarParcialUsuario(id, usuarioDTO);
         return ResponseEntity.ok(response);
@@ -78,7 +78,7 @@ public class UsuarioController {
     @DeleteMapping("/{id}")
     @Operation(summary = "Eliminar usuario", description = "Elimina un usuario del sistema de forma permanente")
     @ApiResponse(responseCode = "200", description = "Operación de eliminación completada")
-    public ResponseEntity<Map<String, String>> eliminarUsuario(@PathVariable Long id) {
+    public ResponseEntity<Map<String, String>> eliminarUsuario(@PathVariable UUID id) {
         String mensaje = usuarioService.eliminarUsuario(id);
         return ResponseEntity.ok(Map.of("mensaje", mensaje));
     }

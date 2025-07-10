@@ -2,6 +2,8 @@ package ds.evaluacion.dsegovia.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.UUID;
+
 @Entity
 @Table(name = "telefono")
 @Getter
@@ -13,9 +15,9 @@ public class Telefono {
 
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long idTelefono;
-
+    @org.hibernate.annotations.UuidGenerator
+    @Column(name = "id_telefono", updatable = false, nullable = false, columnDefinition = "uuid")
+    private UUID idTelefono;
     @Column(nullable = false)
     private String numero;
 
